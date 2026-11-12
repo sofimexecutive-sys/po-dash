@@ -1,0 +1,1054 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Трекинг воронки · Product Lead · Кибершеф</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --ink:#182034; --muted:#667085; --line:#e7ecf3;
+    --accent:#4b43bf; --accent-soft:#f1f4ff; --accent-line:#dedbff;
+    --grad:linear-gradient(90deg,#6d5dfc,#b4a8ff);
+    --danger:#e45858; --danger-soft:#fdecec;
+    --warn:#c98a1f; --warn-soft:#fdf3e1;
+    --ok:#1f9d63; --ok-soft:#e7f8ef;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:Arial,Helvetica,sans-serif; font-size:13px; line-height:1.4;}
+  .wrap{max-width:1180px; margin:0 auto; padding:20px 18px 60px;}
+  .header{background:#fff; border:1px solid var(--line); box-shadow:0 12px 30px rgba(31,42,68,.07); border-radius:22px; padding:20px 24px; margin-bottom:14px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:flex-start;}
+  .header h1{font-size:20px; margin:0 0 4px; letter-spacing:-.02em;}
+  .header p{margin:0; color:var(--muted); font-size:12px; max-width:680px;}
+  .pill{background:var(--accent-soft); color:var(--accent); border-radius:999px; padding:7px 12px; font-weight:800; font-size:11.5px; white-space:nowrap;}
+
+  .admin{background:#fff; border:1px solid var(--line); box-shadow:0 12px 30px rgba(31,42,68,.06); border-radius:18px; padding:14px 16px; margin-bottom:14px;}
+  .admin-label{font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:800; margin-bottom:8px;}
+  .admin-row{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+  .admin-row input[type=text]{flex:1; min-width:220px; padding:9px 12px; border-radius:10px; border:1.5px solid var(--line); font-size:12px; font-family:inherit;}
+  .admin-row button{border:none; background:var(--accent); color:#fff; font-weight:800; font-size:12px; padding:9px 16px; border-radius:10px; cursor:pointer;}
+  .admin-row button.secondary{background:#f1f2f5; color:var(--ink);}
+  .admin-row button:disabled{opacity:.5; cursor:default;}
+  .admin-meta{font-size:11px; color:var(--muted); margin-top:8px;}
+  .admin-file{font-size:11.5px; color:var(--muted);}
+
+  .vac-tabs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;}
+  .vtab{border:1.5px solid var(--line); background:#fff; border-radius:999px; padding:9px 16px; font-weight:800; font-size:12.5px; cursor:pointer; color:var(--muted);}
+  .vtab.active{background:var(--ink); border-color:var(--ink); color:#fff;}
+
+  .searchbar{margin-bottom:12px; position:relative;}
+  .searchbar input{width:100%; padding:11px 16px; border-radius:14px; border:1.5px solid var(--line); font-size:13px; background:#fff; font-family:inherit; box-shadow:0 8px 22px rgba(31,42,68,.05);}
+  .searchbar input:focus{outline:none; border-color:var(--accent-line);}
+
+  .summary{display:grid; grid-template-columns:repeat(8,1fr); gap:10px; margin-bottom:8px;}
+  .sum-card{background:#fff; border:1.5px solid var(--line); box-shadow:0 12px 30px rgba(31,42,68,.06); border-radius:16px; padding:12px 13px; cursor:pointer; transition:.12s;}
+  .sum-card:hover{border-color:var(--accent-line);}
+  .sum-card.active{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
+  .sum-label{font-size:9.5px; color:var(--muted); font-weight:800; text-transform:uppercase; letter-spacing:.04em; line-height:1.3; min-height:24px;}
+  .sum-value{font-size:22px; font-weight:950; margin-top:6px; letter-spacing:-.02em;}
+  .sum-overdue{margin-top:4px; font-size:10.5px; font-weight:800;}
+  .sum-overdue.has{color:var(--danger);}
+  .sum-overdue.ok{color:var(--ok);}
+  .sum-card.rejected-card{margin-bottom:14px; max-width:260px;}
+  .sum-card.rejected-card .sum-value{color:var(--muted);}
+
+  .toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px;}
+  .toggle{margin-left:auto; display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--ink); cursor:pointer; user-select:none;}
+  .toggle input{width:16px; height:16px; accent-color:var(--danger);}
+
+  .group{background:#fff; border:1px solid var(--line); box-shadow:0 12px 30px rgba(31,42,68,.06); border-radius:20px; padding:16px 16px 6px; margin-bottom:14px;}
+  .group-head{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .group-head h2{font-size:15px; margin:0; letter-spacing:-.01em;}
+  .group-count{font-size:11px; color:var(--muted); font-weight:700; background:#f8faff; border:1px solid var(--line); border-radius:999px; padding:3px 10px;}
+
+  table{width:100%; border-collapse:collapse; font-size:12px;}
+  th{text-align:left; color:var(--muted); font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--line); padding:8px 6px; font-weight:800;}
+  td{border-bottom:1px solid var(--line); padding:9px 6px; vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr.cand-row{cursor:pointer;}
+  tr.cand-row:hover td{background:#fafbff;}
+  tr.top-pick td{background:var(--ok-soft);}
+  tr.top-pick:hover td{background:#ddf3e6;}
+  .fio{font-weight:800; color:var(--ink);}
+  .vac-tag{display:inline-block; margin-top:2px; font-size:10px; color:var(--muted); font-weight:600;}
+  .stage-raw{color:var(--muted); font-size:11px;}
+  .reason-txt{color:var(--muted); font-size:11px; overflow-wrap:anywhere;}
+  .approved-txt{color:var(--ok); font-size:11px; font-weight:750;}
+  .disapproved-txt{color:var(--danger); font-size:11px; font-weight:750;}
+  .days-badge{display:inline-block; padding:4px 9px; border-radius:999px; font-weight:850; font-size:11px; white-space:nowrap;}
+  .days-ok{background:var(--ok-soft); color:var(--ok);}
+  .days-warn{background:var(--warn-soft); color:var(--warn);}
+  .days-danger{background:var(--danger-soft); color:var(--danger);}
+  .days-neutral{background:#f1f2f5; color:var(--muted);}
+
+  .votes{display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
+  .vote-person{display:inline-flex; align-items:center; gap:4px; background:#fbfcfe; border:1.5px solid var(--line); border-radius:999px; padding:3px 4px 3px 10px;}
+  .vote-person-name{font-size:11px; font-weight:750; color:var(--ink); white-space:nowrap; margin-right:1px;}
+  .vote-icon-btn{width:22px; height:22px; border-radius:50%; border:none; background:transparent; color:var(--muted); font-size:11px; display:flex; align-items:center; justify-content:center; cursor:pointer; opacity:.45; transition:.12s;}
+  .vote-icon-btn:hover{opacity:.8;}
+  .vote-icon-btn.like-on{background:var(--ok); opacity:1;}
+  .vote-icon-btn.dislike-on{background:var(--danger); opacity:1;}
+  .vote-total{font-weight:900; font-size:11.5px; margin-left:2px; min-width:34px;}
+  .vote-total.pass{color:var(--ok);}
+  .vote-total.fail{color:var(--muted);}
+  .vote-total.dislike-badge{color:var(--danger); min-width:auto;}
+  .star{color:var(--ok); margin-right:4px;}
+
+  .empty-row td{color:var(--muted); text-align:center; padding:18px; font-style:italic;}
+  .footnote{color:var(--muted); font-size:10.5px; line-height:1.6; background:#fff; border:1px solid var(--line); border-radius:16px; padding:12px 14px; margin-top:6px;}
+  .toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; padding:10px 18px; border-radius:12px; font-size:12.5px; font-weight:700; opacity:0; pointer-events:none; transition:.2s; z-index:60;}
+  .toast.show{opacity:1;}
+
+  .modal-bg{position:fixed; inset:0; background:rgba(24,32,52,.5); display:none; align-items:center; justify-content:center; z-index:100; padding:20px;}
+  .modal-bg.show{display:flex;}
+  .modal{background:#fff; border-radius:22px; max-width:520px; width:100%; max-height:85vh; overflow-y:auto; padding:24px 26px; box-shadow:0 30px 60px rgba(0,0,0,.25);}
+  .modal-head{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:4px;}
+  .modal-head h3{margin:0; font-size:18px; letter-spacing:-.01em;}
+  .modal-close{border:none; background:#f1f2f5; width:28px; height:28px; border-radius:50%; font-size:14px; cursor:pointer; color:var(--muted); font-weight:800; flex-shrink:0;}
+  .modal-sub{color:var(--muted); font-size:12px; margin-bottom:16px;}
+  .modal-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px 16px; margin-bottom:14px;}
+  .modal-field{font-size:12px;}
+  .modal-field b{display:block; font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:800; margin-bottom:2px;}
+  .modal-field span{overflow-wrap:anywhere;}
+  .modal-full{grid-column:1/-1;}
+  .modal-note{background:#f8faff; border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-size:11.5px; color:var(--muted); margin-top:8px;}
+  .comment-block{background:#f8faff; border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-top:8px; font-size:12px; line-height:1.55; white-space:pre-wrap; overflow-wrap:anywhere;}
+  .comment-block:first-child{margin-top:0;}
+  .score-summary{display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
+  .score-badge{display:inline-flex; align-items:center; gap:4px; border-radius:999px; padding:4px 8px; background:var(--accent-soft); color:var(--accent); font-size:10.5px; font-weight:850;}
+  .score-badge.empty{background:#f1f2f5; color:var(--muted);}
+  .score-panel{border:1px solid var(--line); border-radius:14px; padding:12px; background:#fbfcff; margin-bottom:14px;}
+  .score-title{font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:850; margin-bottom:10px;}
+  .score-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .score-label{font-size:11.5px; font-weight:800; margin-bottom:6px;}
+  .score-select{width:100%; min-width:150px; padding:9px 11px; border:1.5px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); font:inherit; font-size:12px; font-weight:700; cursor:pointer;}
+  .score-buttons{display:flex; gap:4px; flex-wrap:wrap;}
+  .score-btn{width:28px; height:28px; border-radius:8px; border:1.5px solid var(--line); background:#fff; color:var(--muted); font-weight:850; font-size:11px; cursor:pointer;}
+  .score-btn:hover{border-color:var(--accent-line); color:var(--accent);}
+  .score-btn.active{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .score-meta{font-size:10.5px; color:var(--muted); margin-top:8px;}
+
+  .loading, .error-box{background:#fff; border:1px solid var(--line); border-radius:18px; padding:30px; text-align:center; color:var(--muted);}
+  .error-box{color:var(--danger); background:var(--danger-soft); border-color:transparent;}
+
+  .section-tabs{display:flex; gap:8px; margin-bottom:14px;}
+  .section-tab{border:1.5px solid var(--line); background:#fff; border-radius:999px; padding:9px 18px; font-weight:800; font-size:13px; cursor:pointer; color:var(--muted);}
+  .section-tab.active{background:var(--accent); border-color:var(--accent); color:#fff;}
+
+  .analytics-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;}
+  .analytics-grid-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px;}
+  .acard{background:#fff; border:1px solid var(--line); box-shadow:0 12px 30px rgba(31,42,68,.06); border-radius:20px; padding:16px;}
+  .acard h3{margin:0 0 3px; font-size:15px;}
+  .acard .adesc{color:var(--muted); font-size:11px; margin-bottom:12px;}
+  .abar-row{display:grid; grid-template-columns:130px 1fr 90px; gap:8px; align-items:center; margin:7px 0;}
+  .abar-name{font-size:11px; font-weight:750; color:#344054;}
+  .abar-track{height:20px; background:#e8eaef; border-radius:999px; position:relative; overflow:hidden;}
+  .abar-fill{height:100%; border-radius:999px; background:linear-gradient(90deg,#6d5dfc,#b4a8ff);}
+  .abar-fill.danger{background:linear-gradient(90deg,#e45858,#ffaaa8);}
+  .abar-inside{position:absolute; left:8px; top:50%; transform:translateY(-50%); color:#fff; font-size:10px; font-weight:900; text-shadow:0 1px 3px rgba(0,0,0,.5);}
+  .abar-right{font-size:10.5px; font-weight:800; text-align:right; color:#4b5565;}
+  .areason{display:flex; justify-content:space-between; gap:10px; padding:8px 10px; background:#f8faff; border:1px solid var(--line); border-radius:12px; margin-bottom:6px; font-size:11.5px;}
+  .areason b{white-space:nowrap;}
+  .areason small{color:var(--muted); margin-left:4px;}
+  .atotal-pill{font-size:11px; color:var(--muted); font-weight:700;}
+
+  .extra-section{border-top:1px solid var(--line); margin-top:14px; padding-top:14px;}
+  .extra-label{font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:800; margin-bottom:8px;}
+  .resume-box{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .resume-file-info{background:#f8faff; border:1px solid var(--line); border-radius:12px; padding:8px 12px; font-size:12px; flex:1; min-width:180px;}
+  .resume-file-info b{display:block; font-size:12.5px; color:var(--ink); overflow-wrap:anywhere;}
+  .resume-file-info span{color:var(--muted); font-size:10.5px;}
+  .btn-sm{border:none; border-radius:10px; padding:8px 12px; font-weight:800; font-size:11.5px; cursor:pointer;}
+  .btn-accent{background:var(--accent); color:#fff;}
+  .btn-ghost{background:#f1f2f5; color:var(--ink);}
+  .btn-danger-ghost{background:var(--danger-soft); color:var(--danger);}
+  .link-row{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .link-row input[type=text]{flex:1; min-width:160px; padding:8px 11px; border-radius:10px; border:1.5px solid var(--line); font-size:12px; font-family:inherit;}
+  .link-current{background:#f8faff; border:1px solid var(--line); border-radius:12px; padding:8px 12px; font-size:12px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;}
+  .link-current a{color:var(--accent); font-weight:700; overflow-wrap:anywhere;}
+  .link-meta{color:var(--muted); font-size:10.5px;}
+  .link-stale{color:var(--danger); font-weight:800;}
+  .resume-mode-tabs{display:flex; gap:6px; margin-bottom:10px;}
+  .rmtab{border:1.5px solid var(--line); background:#fff; border-radius:999px; padding:5px 12px; font-weight:750; font-size:11px; cursor:pointer; color:var(--muted);}
+  .rmtab.active{background:var(--ink); border-color:var(--ink); color:#fff;}
+
+  @media (max-width:900px){
+    .summary{grid-template-columns:repeat(2,1fr);}
+    table, thead, tbody, th, td, tr{display:block;}
+    thead{display:none;}
+    tr{border-bottom:1px solid var(--line); padding:8px 0;}
+    td{border-bottom:none; padding:3px 0;}
+    td::before{content:attr(data-label); display:block; font-size:9px; text-transform:uppercase; color:var(--muted); font-weight:800; margin-bottom:2px;}
+    .modal-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div>
+      <h1>Трекинг воронки · Product Lead · Кибершеф</h1>
+      <p>Список кандидатов по вакансии «Product Lead || Кибершеф», включая кандидатов, заведённых до переименования вакансии. «Пристрелка» — кандидаты со статусом «Неразобранные» в Talantix. На этом этапе Никита оценивает попадание в профиль и компанию по 10-балльной шкале и может оставить комментарий.</p>
+    </div>
+    <div class="pill" id="asOf">Кандидатов: —</div>
+  </div>
+
+  <div class="section-tabs">
+    <button class="section-tab active" data-section="tracking">Трекинг воронки</button>
+    <button class="section-tab" data-section="analytics">Аналитика</button>
+  </div>
+
+  <div id="trackingSection">
+    <div class="vac-tabs" id="vacTabs"></div>
+
+    <div class="searchbar">
+      <input type="text" id="searchBox" placeholder="Введите ФИО…">
+    </div>
+
+    <div class="summary" id="summary"></div>
+
+    <div class="toolbar">
+      <label class="toggle"><input type="checkbox" id="overdueOnly"> Только просроченные (3+ дня)</label>
+    </div>
+
+    <div id="groups"><div class="loading">Загружаем данные…</div></div>
+
+    <div class="footnote" id="footnoteText"></div>
+  </div>
+
+  <div id="analyticsSection" style="display:none;">
+    <div class="vac-tabs" id="analyticsVacTabs"></div>
+    <div id="analyticsBody"><div class="loading">Загружаем аналитику…</div></div>
+  </div>
+
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modalBody"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API = ""; // тот же домен, что и фронтенд
+
+const VACANCIES = ["Product Lead"];
+const ACTIVE_STATUSES = ["Пристрелка","Разбор резюме","Интервью с HR","Ожидание ОС (после HR)","Интервью с заказчиком 1","Интервью с заказчиком 2","Оффер / Выход"];
+const OVERDUE_STATUSES = new Set(["Ожидание ОС (после HR)","Интервью с заказчиком 1","Интервью с заказчиком 2"]);
+const SCORE_STATUS = "Пристрелка";
+const PEOPLE = ["Никита"];
+
+let CANDIDATES = [];
+let activeVac = VACANCIES[0];
+let activeStatus = "Пристрелка";
+let overdueOnly = false;
+let searchQuery = "";
+let scoresCache = {};
+
+function daysClass(status, d){
+  if(!OVERDUE_STATUSES.has(status)) return "days-neutral";
+  if(d>=3) return "days-danger";
+  if(d===2) return "days-warn";
+  return "days-ok";
+}
+
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+// ---------- данные с бэкенда ----------
+
+async function loadCandidates(){
+  const res = await fetch(API + "/api/candidates");
+  const data = await res.json();
+  CANDIDATES = data.candidates || [];
+}
+
+async function loadScores(){
+  try{
+    const res = await fetch(API + "/api/scores");
+    scoresCache = await res.json();
+  }catch(e){
+    scoresCache = {};
+  }
+}
+
+function getScore(cid){
+  return scoresCache[cid] || {person:"Никита", profile_score:null, company_score:null, updated_at:null};
+}
+
+async function setCandidateScore(candId, field, value){
+  const current = getScore(candId);
+  const payload = {
+    candidate_id: candId,
+    profile_score: field === "profile_score" ? value : current.profile_score,
+    company_score: field === "company_score" ? value : current.company_score,
+  };
+  const res = await fetch(API + "/api/scores/set", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(payload)
+  });
+  if(!res.ok) throw new Error("score save failed");
+  const saved = await res.json();
+  scoresCache[candId] = saved;
+  return saved;
+}
+
+async function silentRefresh(){
+  try{
+    const res = await fetch(API + "/api/refresh", {method:"POST"});
+    if(!res.ok) return;
+    await loadCandidates();
+    if(activeSection === "tracking") renderAll();
+    if(activeSection === "analytics"){ analyticsData = null; await loadAnalytics(); }
+  }catch(e){
+    // тихо игнорируем — на экране уже показаны последние закешированные данные
+  }
+}
+
+// ---------- рендер (та же логика, что и раньше) ----------
+
+function renderVacTabs(){
+  const el = document.getElementById("vacTabs");
+  el.innerHTML = "";
+  VACANCIES.forEach(v=>{
+    const b = document.createElement("button");
+    b.className = "vtab" + (activeVac===v ? " active" : "");
+    b.textContent = v;
+    b.onclick = ()=>{ activeVac = v; renderAll(); };
+    el.appendChild(b);
+  });
+}
+
+function baseFiltered(){
+  return CANDIDATES.filter(c => activeVac==="Все вакансии" || c.vac===activeVac);
+}
+
+function computeSummary(list){
+  const map = {};
+  ACTIVE_STATUSES.forEach(s=>map[s]={total:0, overdue:0});
+  let rejectedTotal = 0;
+  list.forEach(c=>{
+    if(c.status==="Отказ"){ rejectedTotal++; return; }
+    if(!map[c.status]) map[c.status]={total:0, overdue:0};
+    map[c.status].total++;
+    if(OVERDUE_STATUSES.has(c.status) && c.days>=3) map[c.status].overdue++;
+  });
+  return {map, rejectedTotal};
+}
+
+function renderSummary(list){
+  const {map, rejectedTotal} = computeSummary(list);
+  const el = document.getElementById("summary");
+  el.innerHTML = "";
+  ACTIVE_STATUSES.forEach(s=>{
+    const d = map[s] || {total:0, overdue:0};
+    const card = document.createElement("div");
+    card.className = "sum-card" + (activeStatus===s ? " active" : "");
+    const overdueHtml = OVERDUE_STATUSES.has(s)
+      ? (d.overdue>0
+          ? `<div class="sum-overdue has">${d.overdue} просрочено (3+ дн.)</div>`
+          : `<div class="sum-overdue ok">просрочек нет</div>`)
+      : "";
+    card.innerHTML = `
+      <div class="sum-label">${s}</div>
+      <div class="sum-value">${d.total}</div>
+      ${overdueHtml}
+    `;
+    card.onclick = ()=>{ activeStatus = s; renderAll(); };
+    el.appendChild(card);
+  });
+
+  const rCard = document.createElement("div");
+  rCard.className = "sum-card rejected-card" + (activeStatus==="Отказ" ? " active" : "");
+  rCard.innerHTML = `
+    <div class="sum-label">Отказ</div>
+    <div class="sum-value">${rejectedTotal}</div>
+  `;
+  rCard.onclick = ()=>{ activeStatus = "Отказ"; renderAll(); };
+  el.appendChild(rCard);
+}
+
+// Для этих двух статусов воронка не про "горит-не горит" (просрочка там
+// не отслеживается), а скорее про то, что нового пришло — свежее сверху.
+const FRESH_FIRST_STATUSES = new Set(["Пристрелка", "Разбор резюме", "Отказ"]);
+
+function sortRows(rows, status){
+  if(status === SCORE_STATUS){
+    rows.sort((a,b)=>{
+      const sa = getScore(a.id), sb = getScore(b.id);
+      const aa = ((sa.profile_score || 0) + (sa.company_score || 0)) / ((sa.profile_score ? 1 : 0) + (sa.company_score ? 1 : 0) || 1);
+      const ab = ((sb.profile_score || 0) + (sb.company_score || 0)) / ((sb.profile_score ? 1 : 0) + (sb.company_score ? 1 : 0) || 1);
+      const ca = (sa.profile_score ? 1 : 0) + (sa.company_score ? 1 : 0);
+      const cb = (sb.profile_score ? 1 : 0) + (sb.company_score ? 1 : 0);
+      if(ca !== cb) return cb-ca;
+      if(aa !== ab) return ab-aa;
+      return a.days-b.days;
+    });
+  } else if(FRESH_FIRST_STATUSES.has(status)){
+    rows.sort((a,b)=>a.days-b.days);
+  } else {
+    rows.sort((a,b)=>b.days-a.days);
+  }
+  return rows;
+}
+
+function scoreSummary(c){
+  const sc = getScore(c.id);
+  const p = sc.profile_score;
+  const co = sc.company_score;
+  if(!p && !co) return `<span class="score-badge empty">Не оценено</span>`;
+  return `<div class="score-summary">
+    <span class="score-badge">Профиль ${p || "—"}/10</span>
+    <span class="score-badge">Компания ${co || "—"}/10</span>
+  </div>`;
+}
+
+function candRowHTML(c, status){
+  const isRejected = status === "Отказ";
+  let lastCol;
+  if(isRejected){
+    lastCol = `<td data-label="Причина"><span class="reason-txt">${c.reason ? c.reason.replace(/;/g," · ") : "—"}</span></td>`;
+  } else if(status === SCORE_STATUS){
+    lastCol = `<td data-label="Оценка Никиты">${scoreSummary(c)}</td>`;
+  } else {
+    const sc = getScore(c.id);
+    lastCol = (sc.profile_score || sc.company_score)
+      ? `<td data-label="Оценка Никиты">${scoreSummary(c)}</td>`
+      : `<td data-label="Оценка Никиты"><span class="stage-raw">—</span></td>`;
+  }
+  return `
+    <td data-label="Кандидат"><div class="fio">${c.fio}</div><div class="vac-tag">${c.vac}</div></td>
+    <td data-label="Этап Talantix"><span class="stage-raw">${c.raw_stage}</span></td>
+    <td data-label="Дата перевода">${c.date}</td>
+    <td data-label="Дней"><span class="days-badge ${daysClass(status, c.days)}">${c.days} дн.</span></td>
+    ${lastCol}
+  `;
+}
+
+function attachRowBehavior(tr, c, status){
+  tr.classList.add("cand-row");
+  tr.onclick = ()=>openModal(c);
+}
+
+function renderStatusGroup(){
+  const el = document.getElementById("groups");
+  el.innerHTML = "";
+  const status = activeStatus;
+  const isRejected = status === "Отказ";
+  let rows = baseFiltered().filter(c=>c.status===status);
+  if(overdueOnly && OVERDUE_STATUSES.has(status)) rows = rows.filter(c=>c.days>=3);
+  rows = sortRows(rows.slice(), status);
+
+  const group = document.createElement("div");
+  group.className = "group";
+  const headerCol = isRejected ? "Причина" : "Оценка Никиты";
+
+  group.innerHTML = `
+    <div class="group-head"><h2>${status}</h2><span class="group-count">${rows.length}</span></div>
+    <table>
+      <thead><tr><th>Кандидат</th><th>Этап Talantix</th><th>Дата перевода</th><th>Дней</th><th>${headerCol}</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  `;
+  const tbody = group.querySelector("tbody");
+  if(rows.length===0){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="5">Нет кандидатов на этом этапе</td></tr>`;
+  } else {
+    rows.forEach(c=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = candRowHTML(c, status);
+      attachRowBehavior(tr, c, status);
+      tbody.appendChild(tr);
+    });
+  }
+  el.appendChild(group);
+}
+
+function renderSearchResults(){
+  const el = document.getElementById("groups");
+  el.innerHTML = "";
+  const q = searchQuery.trim().toLowerCase();
+  const order = ACTIVE_STATUSES.concat(["Отказ"]);
+  let rows = baseFiltered().filter(c=>c.fio.toLowerCase().includes(q));
+  rows.sort((a,b)=>a.status===b.status ? b.days-a.days : order.indexOf(a.status)-order.indexOf(b.status));
+
+  const group = document.createElement("div");
+  group.className = "group";
+  group.innerHTML = `
+    <div class="group-head"><h2>Результаты поиска «${searchQuery}»</h2><span class="group-count">${rows.length}</span></div>
+    <table>
+      <thead><tr><th>Кандидат</th><th>Статус</th><th>Этап Talantix</th><th>Дата перевода</th><th>Дней</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  `;
+  const tbody = group.querySelector("tbody");
+  if(rows.length===0){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="5">Никого не нашли — проверьте написание ФИО</td></tr>`;
+  } else {
+    rows.forEach(c=>{
+      const tr = document.createElement("tr");
+      tr.classList.add("cand-row");
+      tr.innerHTML = `
+        <td data-label="Кандидат"><div class="fio">${c.fio}</div><div class="vac-tag">${c.vac}</div></td>
+        <td data-label="Статус">${c.status}</td>
+        <td data-label="Этап Talantix"><span class="stage-raw">${c.raw_stage}</span></td>
+        <td data-label="Дата перевода">${c.date}</td>
+        <td data-label="Дней"><span class="days-badge ${daysClass(c.status, c.days)}">${c.days} дн.</span></td>
+      `;
+      tr.onclick = ()=>openModal(c);
+      tbody.appendChild(tr);
+    });
+  }
+  el.appendChild(group);
+}
+
+function field(label, value){
+  if(!value || !String(value).trim()) return "";
+  return `<div class="modal-field"><b>${label}</b><span>${value}</span></div>`;
+}
+
+function escapeHtml(s){
+  const div = document.createElement("div");
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function renderRecruiterComments(c){
+  const comments = [c.comment1, c.comment2, c.comment3].filter(v => v && String(v).trim());
+  if(!comments.length) return "";
+  const blocks = comments.map(txt => `<div class="comment-block">${escapeHtml(txt)}</div>`).join("");
+  return `<div class="modal-field modal-full"><b>Комментарии рекрутера</b>${blocks}</div>`;
+}
+
+function fmtBytesDate(iso){
+  if(!iso) return "";
+  return new Date(iso).toLocaleString("ru-RU");
+}
+
+async function loadCustomerComments(candId){
+  try{
+    const res = await fetch(API + `/api/candidate-extra/${candId}/comments`);
+    return await res.json();
+  }catch(e){
+    return [];
+  }
+}
+
+function fmtCommentDate(iso){
+  if(!iso) return "";
+  return new Date(iso).toLocaleString("ru-RU");
+}
+
+function renderCustomerCommentsSection(c, comments){
+  const list = comments.length
+    ? comments.map(cm => `
+        <div class="comment-block">
+          <div style="font-weight:800; font-size:11px; color:var(--ink); margin-bottom:3px;">${cm.person} <span style="font-weight:600; color:var(--muted); font-size:10px;">· ${fmtCommentDate(cm.created_at)}</span></div>
+          ${escapeHtml(cm.text)}
+        </div>
+      `).join("")
+    : `<div style="color:var(--muted); font-style:italic; font-size:11.5px;">Пока нет комментариев</div>`;
+
+  const personOptions = PEOPLE.map(p=>`<option value="${p}">${p}</option>`).join("");
+
+  return `
+    <div class="extra-section" style="border-top:none; margin-top:0; padding-top:0; margin-bottom:14px;">
+      <div class="extra-label" style="display:flex; align-items:center; justify-content:space-between;">
+        <span>Комментарии заказчиков</span>
+        <button type="button" class="btn-sm btn-ghost" id="toggleCommentFormBtn">+ Добавить комментарий</button>
+      </div>
+      ${list}
+      <div id="commentFormWrap" style="display:none; margin-top:10px;">
+        <div class="link-row" style="align-items:flex-start;">
+          <select id="commentPersonSelect" style="padding:8px 10px; border-radius:10px; border:1.5px solid var(--line); font-size:12px; font-family:inherit;">
+            ${personOptions}
+          </select>
+          <textarea id="commentTextInput" placeholder="Комментарий…" rows="2" style="flex:1; min-width:160px; padding:8px 11px; border-radius:10px; border:1.5px solid var(--line); font-size:12px; font-family:inherit; resize:vertical;"></textarea>
+          <button type="button" class="btn-sm btn-accent" id="saveCommentBtn">Сохранить</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function loadExtra(candId){
+  try{
+    const res = await fetch(API + `/api/candidate-extra/${candId}`);
+    return await res.json();
+  }catch(e){
+    return {resume_filename:null, talantix_link:null};
+  }
+}
+
+function scoreSelect(field, current){
+  const options = [
+    `<option value=""${current==null ? " selected" : ""}>Без оценки</option>`,
+    ...Array.from({length:10}, (_,i)=>{
+      const value = i+1;
+      return `<option value="${value}"${current===value ? " selected" : ""}>${value}</option>`;
+    })
+  ].join("");
+  return `<select class="score-select" data-score-field="${field}">${options}</select>`;
+}
+
+function renderScoreBlock(c, score){
+  const editable = c.status === SCORE_STATUS;
+  const hasScore = !!(score.profile_score || score.company_score);
+  if(!editable && !hasScore) return "";
+
+  if(!editable){
+    return `
+      <div class="score-panel">
+        <div class="score-title">Оценка Никиты на этапе «Пристрелка»</div>
+        ${scoreSummary(c)}
+      </div>
+    `;
+  }
+
+  return `
+    <div class="score-panel">
+      <div class="score-title">Оценка Никиты · 10-балльная шкала</div>
+      <div class="score-grid">
+        <div>
+          <div class="score-label">Попадание в профиль</div>
+          ${scoreSelect("profile_score", score.profile_score)}
+        </div>
+        <div>
+          <div class="score-label">Попадание в компанию</div>
+          ${scoreSelect("company_score", score.company_score)}
+        </div>
+      </div>
+      <div class="score-meta">Оценки сохраняются сразу после выбора. Чтобы отменить оценку, выберите «Без оценки». Комментарий можно оставить ниже.</div>
+    </div>
+  `;
+}
+
+function renderResumeSection(c, extra, mode){
+  const hasFile = !!extra.resume_filename;
+  const hasLink = !!extra.talantix_link;
+  const activeMode = mode || (hasFile ? "file" : (hasLink ? "link" : "file"));
+
+  const isPdf = (extra.resume_mimetype === "application/pdf") || /\.pdf$/i.test(extra.resume_filename || "");
+  const pdfPreview = hasFile && isPdf
+    ? `<iframe src="${API}/api/candidate-extra/${c.id}/resume/view" style="width:100%; height:420px; border:1px solid var(--line); border-radius:12px; margin-top:10px;"></iframe>`
+    : "";
+
+  const fileBlock = hasFile
+    ? `
+      <div class="resume-box">
+        <div class="resume-file-info">
+          <b>${extra.resume_filename}</b>
+          <span>загружено ${fmtBytesDate(extra.resume_uploaded_at)}</span>
+        </div>
+        <a href="${API}/api/candidate-extra/${c.id}/resume" target="_blank"><button class="btn-sm btn-accent" type="button">Скачать</button></a>
+        <button class="btn-sm btn-ghost" type="button" id="resumeReplaceBtn">Заменить</button>
+        <button class="btn-sm btn-danger-ghost" type="button" id="resumeDeleteBtn">Удалить</button>
+      </div>
+      ${pdfPreview}
+      <input type="file" id="resumeFileInput" style="display:none">
+    `
+    : `
+      <div class="resume-box">
+        <button class="btn-sm btn-accent" type="button" id="resumeUploadBtn">Загрузить файл (PDF/DOC)</button>
+        <input type="file" id="resumeFileInput" style="display:none" accept=".pdf,.doc,.docx">
+      </div>
+    `;
+
+  const linkBlock = hasLink
+    ? `
+      <div class="link-current">
+        <a href="${extra.talantix_link}" target="_blank" rel="noopener">${extra.talantix_link}</a>
+        <span class="link-meta ${extra.link_is_stale ? 'link-stale' : ''}">
+          добавлена ${fmtBytesDate(extra.talantix_link_added_at)}${extra.link_is_stale ? ' — возможно, протухла (7+ дней), обновите' : ''}
+        </span>
+      </div>
+      <div class="link-row" style="margin-top:8px;">
+        <input type="text" id="talantixLinkInput" placeholder="Новая ссылка на Talantix…">
+        <button class="btn-sm btn-ghost" type="button" id="linkSaveBtn">Обновить</button>
+      </div>
+    `
+    : `
+      <div class="link-row">
+        <input type="text" id="talantixLinkInput" placeholder="Вставьте ссылку на карточку в Talantix…">
+        <button class="btn-sm btn-accent" type="button" id="linkSaveBtn">Сохранить</button>
+      </div>
+    `;
+
+  return `
+    <div class="extra-section" style="border-top:none; margin-top:0; padding-top:0;">
+      <div class="extra-label">Резюме</div>
+      <div class="resume-mode-tabs">
+        <button class="rmtab${activeMode==='file'?' active':''}" type="button" data-rmode="file">Файл${hasFile ? ' ✓' : ''}</button>
+        <button class="rmtab${activeMode==='link'?' active':''}" type="button" data-rmode="link">Ссылка на Talantix${hasLink ? ' ✓' : ''}</button>
+      </div>
+      <div id="resumeModeFile" style="${activeMode==='file'?'':'display:none;'}">${fileBlock}</div>
+      <div id="resumeModeLink" style="${activeMode==='link'?'':'display:none;'}">${linkBlock}</div>
+    </div>
+  `;
+}
+
+function wireModalHandlers(c, extra, score){
+  // комментарии заказчиков
+  const toggleBtn = document.getElementById("toggleCommentFormBtn");
+  if(toggleBtn){
+    toggleBtn.onclick = ()=>{
+      const wrap = document.getElementById("commentFormWrap");
+      wrap.style.display = wrap.style.display === "none" ? "block" : "none";
+    };
+  }
+  const saveCommentBtn = document.getElementById("saveCommentBtn");
+  if(saveCommentBtn){
+    saveCommentBtn.onclick = async ()=>{
+      const person = document.getElementById("commentPersonSelect").value;
+      const textInput = document.getElementById("commentTextInput");
+      const text = textInput.value.trim();
+      if(!text){ showToast("Введите текст комментария"); return; }
+      try{
+        const res = await fetch(API + `/api/candidate-extra/${c.id}/comments`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({candidate_id: c.id, person, text})
+        });
+        if(!res.ok) throw new Error();
+        const activeTab = document.querySelector('.rmtab.active');
+        const mode = activeTab ? activeTab.dataset.rmode : undefined;
+        showToast("Комментарий добавлен");
+        openModal(c, mode);
+      }catch(err){
+        showToast("Не удалось сохранить комментарий");
+      }
+    };
+  }
+
+  // оценки Никиты на этапе «Пристрелка»
+  document.querySelectorAll('.score-select[data-score-field]').forEach(select=>{
+    select.onchange = async ()=>{
+      try{
+        const value = select.value === "" ? null : Number(select.value);
+        await setCandidateScore(c.id, select.dataset.scoreField, value);
+        showToast(value == null ? "Оценка отменена" : "Оценка сохранена");
+        const activeTab = document.querySelector('.rmtab.active');
+        const mode = activeTab ? activeTab.dataset.rmode : undefined;
+        openModal(c, mode);
+        renderAll();
+      }catch(err){
+        showToast("Не удалось сохранить оценку");
+      }
+    };
+  });
+
+  // переключатель режима резюме: файл / ссылка
+  document.querySelectorAll('.rmtab').forEach(btn=>{
+    btn.onclick = ()=>{
+      document.querySelectorAll('.rmtab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const mode = btn.dataset.rmode;
+      document.getElementById('resumeModeFile').style.display = mode==='file' ? '' : 'none';
+      document.getElementById('resumeModeLink').style.display = mode==='link' ? '' : 'none';
+    };
+  });
+
+  const fileInput = document.getElementById("resumeFileInput");
+  const uploadBtn = document.getElementById("resumeUploadBtn");
+  const replaceBtn = document.getElementById("resumeReplaceBtn");
+  const deleteBtn = document.getElementById("resumeDeleteBtn");
+  const linkSaveBtn = document.getElementById("linkSaveBtn");
+
+  if(uploadBtn) uploadBtn.onclick = ()=>fileInput.click();
+  if(replaceBtn) replaceBtn.onclick = ()=>fileInput.click();
+  if(fileInput){
+    fileInput.onchange = async (e)=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("uploaded_by", "");
+      try{
+        const res = await fetch(API + `/api/candidate-extra/${c.id}/resume`, {method:"POST", body: fd});
+        if(!res.ok) throw new Error();
+        showToast("Резюме загружено");
+        openModal(c, "file");
+      }catch(err){
+        showToast("Не удалось загрузить файл");
+      }
+    };
+  }
+  if(deleteBtn){
+    deleteBtn.onclick = async ()=>{
+      if(!confirm("Удалить загруженное резюме?")) return;
+      try{
+        await fetch(API + `/api/candidate-extra/${c.id}/resume`, {method:"DELETE"});
+        showToast("Резюме удалено");
+        openModal(c, "file");
+      }catch(err){
+        showToast("Не удалось удалить файл");
+      }
+    };
+  }
+  if(linkSaveBtn){
+    linkSaveBtn.onclick = async ()=>{
+      const input = document.getElementById("talantixLinkInput");
+      const url = input.value.trim();
+      if(!url){ showToast("Вставьте ссылку"); return; }
+      try{
+        const res = await fetch(API + `/api/candidate-extra/${c.id}/link`, {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({url})
+        });
+        if(!res.ok) throw new Error();
+        showToast("Ссылка сохранена");
+        openModal(c, "link");
+      }catch(err){
+        showToast("Не удалось сохранить ссылку");
+      }
+    };
+  }
+}
+
+async function openModal(c, resumeMode){
+  const bg = document.getElementById("modalBg");
+  const body = document.getElementById("modalBody");
+  const extra = await loadExtra(c.id);
+  const customerComments = await loadCustomerComments(c.id);
+  const score = getScore(c.id);
+
+  const infoFields = [
+    field("Источник", c.source),
+    field("Город", c.city),
+    field("Дата рождения / возраст", c.birth),
+    field("Пол", c.gender),
+    field("Email", c.email),
+    field("Телефон", c.phone),
+    field("Должность (последняя)", c.position),
+    field("Общий стаж", c.experience),
+    field("Языки", c.languages),
+    field("З/п ожидания", c.salary),
+    c.last_job ? `<div class="modal-field modal-full"><b>Последнее место работы</b><span>${c.last_job}</span></div>` : "",
+    c.education ? `<div class="modal-field modal-full"><b>Образование</b><span>${c.education}</span></div>` : "",
+    c.status==="Отказ" && c.reason ? `<div class="modal-field modal-full"><b>Причина отказа</b><span>${c.reason.replace(/;/g," · ")}</span></div>` : "",
+    renderRecruiterComments(c),
+  ].filter(Boolean).join("");
+
+  body.innerHTML = `
+    <div class="modal-head">
+      <h3>${c.fio}</h3>
+      <button class="modal-close" id="modalCloseBtn">✕</button>
+    </div>
+    <div class="modal-sub">${c.vac} · ${c.status} (${c.raw_stage}) · переведён ${c.date} · <span class="days-badge ${daysClass(c.status, c.days)}">${c.days} дн. в статусе</span></div>
+
+    ${renderResumeSection(c, extra, resumeMode)}
+    ${renderScoreBlock(c, score)}
+    ${renderCustomerCommentsSection(c, customerComments)}
+
+    <div class="modal-grid" style="margin-top:14px;">
+      ${infoFields}
+    </div>
+  `;
+  document.getElementById("modalCloseBtn").onclick = closeModal;
+  wireModalHandlers(c, extra, score);
+  bg.classList.add("show");
+}
+function closeModal(){
+  document.getElementById("modalBg").classList.remove("show");
+}
+document.getElementById("modalBg").addEventListener("click", (e)=>{
+  if(e.target.id==="modalBg") closeModal();
+});
+
+function renderAll(){
+  renderVacTabs();
+  const list = baseFiltered();
+  document.getElementById("asOf").textContent = "Кандидатов: " + list.length;
+
+  if(CANDIDATES.length === 0){
+    document.getElementById("summary").innerHTML = "";
+    document.querySelector(".toolbar").style.display = "none";
+    document.getElementById("groups").innerHTML = `<div class="error-box">Данные ещё не загружены. Нажмите «Обновить данные с сервера» вверху страницы.</div>`;
+    return;
+  }
+
+  renderSummary(list);
+
+  const searching = searchQuery.trim().length > 0;
+  document.querySelector(".toolbar").style.display = searching ? "none" : "flex";
+  document.getElementById("summary").style.display = searching ? "none" : "grid";
+
+  if(searching){
+    renderSearchResults();
+  } else {
+    renderStatusGroup();
+  }
+}
+
+document.getElementById("overdueOnly").onchange = (e)=>{
+  overdueOnly = e.target.checked;
+  renderAll();
+};
+document.getElementById("searchBox").oninput = (e)=>{
+  searchQuery = e.target.value;
+  renderAll();
+};
+
+// ---------- раздел "Аналитика" ----------
+
+const ANALYTICS_VACANCIES = ["Product Lead"];
+let analyticsData = null;
+let analyticsVac = ANALYTICS_VACANCIES[0];
+let activeSection = "tracking";
+
+function switchSection(section){
+  activeSection = section;
+  document.querySelectorAll(".section-tab").forEach(b=>b.classList.toggle("active", b.dataset.section===section));
+  document.getElementById("trackingSection").style.display = section==="tracking" ? "block" : "none";
+  document.getElementById("analyticsSection").style.display = section==="analytics" ? "block" : "none";
+  if(section==="analytics" && !analyticsData) loadAnalytics();
+}
+document.querySelectorAll(".section-tab").forEach(btn=>{
+  btn.onclick = ()=>switchSection(btn.dataset.section);
+});
+
+function renderAnalyticsVacTabs(){
+  const el = document.getElementById("analyticsVacTabs");
+  el.innerHTML = "";
+  ANALYTICS_VACANCIES.forEach(v=>{
+    const b = document.createElement("button");
+    b.className = "vtab" + (analyticsVac===v ? " active" : "");
+    b.textContent = v;
+    b.onclick = ()=>{ analyticsVac = v; renderAnalyticsVacTabs(); renderAnalyticsBody(); };
+    el.appendChild(b);
+  });
+}
+
+function abarRow(name, count, pct, danger){
+  return `
+    <div class="abar-row">
+      <div class="abar-name">${name}</div>
+      <div class="abar-track"><div class="abar-fill${danger?' danger':''}" style="width:${Math.min(pct,100)}%"></div><span class="abar-inside">${count}</span></div>
+      <div class="abar-right">${pct}%</div>
+    </div>
+  `;
+}
+
+function areasonRow(reason, count, pct){
+  return `<div class="areason"><span>${reason}</span><b>${count} <small>${pct}%</small></b></div>`;
+}
+
+function computeSourceBreakdown(vac){
+  const list = CANDIDATES.filter(c => vac==="Все вакансии" || c.vac===vac);
+  const counts = {};
+  list.forEach(c=>{
+    const src = (c.source || "").trim() || "Не указан";
+    counts[src] = (counts[src]||0) + 1;
+  });
+  const total = list.length || 1;
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const top = sorted.slice(0, 8);
+  const restCount = sorted.slice(8).reduce((s,[,c])=>s+c, 0);
+  const rows = top.map(([src,c])=>({source:src, count:c, pct: Math.round(c/total*1000)/10}));
+  if(restCount>0) rows.push({source:"Другое", count:restCount, pct: Math.round(restCount/total*1000)/10});
+  return rows;
+}
+
+function renderAnalyticsBody(){
+  const el = document.getElementById("analyticsBody");
+  if(!analyticsData){
+    el.innerHTML = `<div class="error-box">Аналитика ещё не загружена. Проверьте, что на сервере настроены FUNNEL_SOURCE_URL и PROCESS_SOURCE_URL, и нажмите «Обновить данные с сервера».</div>`;
+    return;
+  }
+  const d = analyticsData[analyticsVac];
+  if(!d){
+    el.innerHTML = `<div class="error-box">Нет данных по вакансии «${analyticsVac}».</div>`;
+    return;
+  }
+
+  const funnelHtml = d.funnel.map(f=>abarRow(f.stage, f.count, f.pct)).join("");
+  const timeHtml = d.avg_time.length
+    ? d.avg_time.map(t=>abarRow(t.stage, t.days+" дн.", Math.min(t.days*4, 100))).join("")
+    : `<div class="empty-row" style="padding:14px; text-align:center; color:var(--muted); font-style:italic;">Нет данных</div>`;
+  const rejStageHtml = d.rejections_by_stage.length
+    ? d.rejections_by_stage.map(r=>abarRow(r.stage, r.count, r.pct, true)).join("")
+    : `<div class="empty-row" style="padding:14px; text-align:center; color:var(--muted); font-style:italic;">Отказов нет</div>`;
+  const reasonsCompanyHtml = d.reasons_company.length
+    ? d.reasons_company.map(r=>areasonRow(r.reason, r.count, r.pct)).join("")
+    : `<div style="color:var(--muted); font-style:italic; font-size:11.5px;">Нет данных</div>`;
+  const reasonsCandidateHtml = d.reasons_candidate.length
+    ? d.reasons_candidate.map(r=>areasonRow(r.reason, r.count, r.pct)).join("")
+    : `<div style="color:var(--muted); font-style:italic; font-size:11.5px;">Нет данных</div>`;
+  const sourceRows = computeSourceBreakdown(analyticsVac);
+  const sourceHtml = sourceRows.length
+    ? sourceRows.map(s=>abarRow(s.source, s.count, s.pct)).join("")
+    : `<div class="empty-row" style="padding:14px; text-align:center; color:var(--muted); font-style:italic;">Нет данных</div>`;
+
+  el.innerHTML = `
+    <div class="acard" style="margin-bottom:14px;">
+      <h3>Воронка рекрутмента</h3>
+      <div class="adesc">Доля каждого этапа рассчитана от этапа «Новые». Всего отказов: ${d.total_rejections}.</div>
+      ${funnelHtml}
+    </div>
+    <div class="acard" style="margin-bottom:14px;">
+      <h3>Источники найма</h3>
+      <div class="adesc">Откуда пришли кандидаты (топ-8 + «Другое»), % от всех кандидатов по вакансии.</div>
+      ${sourceHtml}
+    </div>
+    <div class="analytics-grid">
+      <div class="acard">
+        <h3>Среднее время на этапах</h3>
+        <div class="adesc">Дней в статусе, факт. Только этапы, где кандидат ещё может двигаться дальше.</div>
+        ${timeHtml}
+      </div>
+      <div class="acard">
+        <h3>Отказы по этапам</h3>
+        <div class="adesc">Количество и % от общего числа отказов.</div>
+        ${rejStageHtml}
+      </div>
+    </div>
+    <div class="analytics-grid">
+      <div class="acard">
+        <h3>Топ причин отказа компании</h3>
+        <div class="adesc">Количество и % от общего числа отказов.</div>
+        ${reasonsCompanyHtml}
+      </div>
+      <div class="acard">
+        <h3>Топ причин отказа кандидатов</h3>
+        <div class="adesc">Количество и % от общего числа отказов.</div>
+        ${reasonsCandidateHtml}
+      </div>
+    </div>
+  `;
+}
+
+async function loadAnalytics(){
+  document.getElementById("analyticsBody").innerHTML = `<div class="loading">Загружаем аналитику…</div>`;
+  try{
+    const res = await fetch(API + "/api/analytics");
+    const data = await res.json();
+    analyticsData = data.data;
+  }catch(e){
+    analyticsData = null;
+  }
+  renderAnalyticsVacTabs();
+  renderAnalyticsBody();
+}
+
+function setFootnoteText(){
+  const el = document.getElementById("footnoteText");
+  if(!el) return;
+  el.textContent = `«Пристрелка» = кандидаты в статусе «Неразобранные» в Talantix. Никита может поставить две оценки по шкале 1–10: попадание в профиль и попадание в компанию, а также оставить комментарий. Комментарии рекрутера из Talantix отображаются в карточке кандидата. Резюме прикрепляется к карточке кандидата и сохраняется при обновлении отчёта.`;
+}
+
+(async function init(){
+  setFootnoteText();
+  // /api/candidates itself now prefers fresh Drive data and only falls back
+  // to the cached snapshot if the source is temporarily unavailable.
+  await loadCandidates();
+  await loadScores();
+  renderAll();
+})();
+</script>
+</body>
+</html>
