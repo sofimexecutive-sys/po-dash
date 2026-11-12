@@ -420,14 +420,21 @@ def _validate_score(value: int | None, field: str):
         raise HTTPException(400, f"{field} должен быть от 1 до 10")
 
 
+SCORE_EVALUATORS = {"Дима", "Никита"}
+
+
 @app.get("/api/scores")
 def get_scores(db: Session = Depends(get_db)):
-    rows = db.query(CandidateScore).order_by(CandidateScore.updated_at.asc()).all()
+    rows = (
+        db.query(CandidateScore)
+        .filter(CandidateScore.person.in_(SCORE_EVALUATORS))
+        .order_by(CandidateScore.updated_at.asc())
+        .all()
+    )
     out: dict[str, dict] = {}
     for row in rows:
-        # Ordered oldest -> newest, so the last row wins for historical duplicates.
-        out[row.candidate_id] = {
-            "person": "Никита",
+        out.setdefault(row.candidate_id, {})[row.person] = {
+            "person": row.person,
             "profile_score": row.profile_score,
             "company_score": row.company_score,
             "updated_at": row.updated_at.isoformat() if row.updated_at else None,
@@ -437,45 +444,54 @@ def get_scores(db: Session = Depends(get_db)):
 
 @app.get("/api/scores/{candidate_id}")
 def get_candidate_score(candidate_id: str, db: Session = Depends(get_db)):
-    row = (
+    rows = (
         db.query(CandidateScore)
-        .filter(CandidateScore.candidate_id == candidate_id)
-        .order_by(CandidateScore.updated_at.desc())
-        .first()
+        .filter(
+            CandidateScore.candidate_id == candidate_id,
+            CandidateScore.person.in_(SCORE_EVALUATORS),
+        )
+        .order_by(CandidateScore.updated_at.asc())
+        .all()
     )
-    if not row:
-        return {"person": "Никита", "profile_score": None, "company_score": None, "updated_at": None}
-    return {
-        "person": row.person,
-        "profile_score": row.profile_score,
-        "company_score": row.company_score,
-        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
-    }
+    out = {}
+    for row in rows:
+        out[row.person] = {
+            "person": row.person,
+            "profile_score": row.profile_score,
+            "company_score": row.company_score,
+            "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+        }
+    return out
 
 
 @app.post("/api/scores/set")
 def set_score(payload: ScoreSet, db: Session = Depends(get_db)):
+    person = (payload.person or "").strip()
+    if person not in SCORE_EVALUATORS:
+        raise HTTPException(400, "Оценщик должен быть Дима или Никита")
+
     _validate_score(payload.profile_score, "Попадание в профиль")
     _validate_score(payload.company_score, "Попадание в компанию")
 
-    # Product Lead dashboard has one evaluator: Никита.
     row = (
         db.query(CandidateScore)
-        .filter(CandidateScore.candidate_id == payload.candidate_id)
-        .order_by(CandidateScore.updated_at.desc())
+        .filter(
+            CandidateScore.candidate_id == payload.candidate_id,
+            CandidateScore.person == person,
+        )
         .first()
     )
     now = datetime.now(timezone.utc)
     if not row:
-        row = CandidateScore(candidate_id=payload.candidate_id, person="Никита")
+        row = CandidateScore(candidate_id=payload.candidate_id, person=person)
         db.add(row)
-    elif row.person != "Никита":
-        row.person = "Никита"
+
     row.profile_score = payload.profile_score
     row.company_score = payload.company_score
     row.updated_at = now
     db.commit()
     db.refresh(row)
+
     return {
         "candidate_id": row.candidate_id,
         "person": row.person,

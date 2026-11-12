@@ -188,7 +188,7 @@
   <div class="header">
     <div>
       <h1>Трекинг воронки · Product Lead · Кибершеф</h1>
-      <p>Список кандидатов по вакансии «Product Lead || Кибершеф», включая кандидатов, заведённых до переименования вакансии. «Пристрелка» — кандидаты со статусом «Неразобранные» в Talantix. На этом этапе Никита оценивает попадание в профиль и компанию по 10-балльной шкале и может оставить комментарий.</p>
+      <p>Список кандидатов по вакансии «Product Lead || Кибершеф», включая кандидатов, заведённых до переименования вакансии. «Пристрелка» — кандидаты со статусом «Неразобранные» в Talantix. На этом этапе Дима и Никита независимо оценивают попадание в профиль и компанию по 10-балльной шкале и могут оставить комментарий.</p>
     </div>
     <div class="pill" id="asOf">Кандидатов: —</div>
   </div>
@@ -235,7 +235,8 @@ const VACANCIES = ["Product Lead"];
 const ACTIVE_STATUSES = ["Пристрелка","Разбор резюме","Интервью с HR","Ожидание ОС (после HR)","Интервью с заказчиком 1","Интервью с заказчиком 2","Оффер / Выход"];
 const OVERDUE_STATUSES = new Set(["Ожидание ОС (после HR)","Интервью с заказчиком 1","Интервью с заказчиком 2"]);
 const SCORE_STATUS = "Пристрелка";
-const PEOPLE = ["Никита"];
+const PEOPLE = ["Дима","Никита"];
+const EVALUATORS = ["Дима","Никита"];
 
 let CANDIDATES = [];
 let activeVac = VACANCIES[0];
@@ -275,14 +276,39 @@ async function loadScores(){
   }
 }
 
-function getScore(cid){
-  return scoresCache[cid] || {person:"Никита", profile_score:null, company_score:null, updated_at:null};
+function getScore(cid, person){
+  const byPerson = scoresCache[cid] || {};
+  return byPerson[person] || {person, profile_score:null, company_score:null, updated_at:null};
 }
 
-async function setCandidateScore(candId, field, value){
-  const current = getScore(candId);
+function evaluatorAverage(score){
+  const values = [score.profile_score, score.company_score].filter(v => v != null);
+  if(!values.length) return null;
+  return values.reduce((a,b)=>a+b,0) / values.length;
+}
+
+function overallCustomerScore(cid){
+  const evaluatorScores = EVALUATORS
+    .map(person => evaluatorAverage(getScore(cid, person)))
+    .filter(v => v != null);
+  if(!evaluatorScores.length) return null;
+  return evaluatorScores.reduce((a,b)=>a+b,0) / evaluatorScores.length;
+}
+
+function evaluatedPeopleCount(cid){
+  return EVALUATORS.filter(person => evaluatorAverage(getScore(cid, person)) != null).length;
+}
+
+function fmtScore(value){
+  if(value == null) return "—";
+  return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(".", ",");
+}
+
+async function setCandidateScore(candId, person, field, value){
+  const current = getScore(candId, person);
   const payload = {
     candidate_id: candId,
+    person,
     profile_score: field === "profile_score" ? value : current.profile_score,
     company_score: field === "company_score" ? value : current.company_score,
   };
@@ -293,7 +319,8 @@ async function setCandidateScore(candId, field, value){
   });
   if(!res.ok) throw new Error("score save failed");
   const saved = await res.json();
-  scoresCache[candId] = saved;
+  if(!scoresCache[candId]) scoresCache[candId] = {};
+  scoresCache[candId][person] = saved;
   return saved;
 }
 
@@ -379,13 +406,12 @@ const FRESH_FIRST_STATUSES = new Set(["Пристрелка", "Разбор ре
 function sortRows(rows, status){
   if(status === SCORE_STATUS){
     rows.sort((a,b)=>{
-      const sa = getScore(a.id), sb = getScore(b.id);
-      const aa = ((sa.profile_score || 0) + (sa.company_score || 0)) / ((sa.profile_score ? 1 : 0) + (sa.company_score ? 1 : 0) || 1);
-      const ab = ((sb.profile_score || 0) + (sb.company_score || 0)) / ((sb.profile_score ? 1 : 0) + (sb.company_score ? 1 : 0) || 1);
-      const ca = (sa.profile_score ? 1 : 0) + (sa.company_score ? 1 : 0);
-      const cb = (sb.profile_score ? 1 : 0) + (sb.company_score ? 1 : 0);
+      const aa = overallCustomerScore(a.id);
+      const ab = overallCustomerScore(b.id);
+      const ca = evaluatedPeopleCount(a.id);
+      const cb = evaluatedPeopleCount(b.id);
       if(ca !== cb) return cb-ca;
-      if(aa !== ab) return ab-aa;
+      if((aa ?? -1) !== (ab ?? -1)) return (ab ?? -1) - (aa ?? -1);
       return a.days-b.days;
     });
   } else if(FRESH_FIRST_STATUSES.has(status)){
@@ -397,14 +423,20 @@ function sortRows(rows, status){
 }
 
 function scoreSummary(c){
-  const sc = getScore(c.id);
-  const p = sc.profile_score;
-  const co = sc.company_score;
-  if(!p && !co) return `<span class="score-badge empty">Не оценено</span>`;
+  const overall = overallCustomerScore(c.id);
+  const count = evaluatedPeopleCount(c.id);
+  if(overall == null) return `<span class="score-badge empty">Не оценено</span>`;
   return `<div class="score-summary">
-    <span class="score-badge">Профиль ${p || "—"}/10</span>
-    <span class="score-badge">Компания ${co || "—"}/10</span>
+    <span class="score-badge">Оценка заказчика ${fmtScore(overall)}/10</span>
+    <span class="score-badge empty">${count === 2 ? "2 оценки" : "1 оценка"}</span>
   </div>`;
+}
+
+function evaluatorSummary(cid, person){
+  const sc = getScore(cid, person);
+  const avg = evaluatorAverage(sc);
+  if(avg == null) return `<span class="score-badge empty">${person}: не оценено</span>`;
+  return `<span class="score-badge">${person}: ${fmtScore(avg)}/10</span>`;
 }
 
 function candRowHTML(c, status){
@@ -413,12 +445,12 @@ function candRowHTML(c, status){
   if(isRejected){
     lastCol = `<td data-label="Причина"><span class="reason-txt">${c.reason ? c.reason.replace(/;/g," · ") : "—"}</span></td>`;
   } else if(status === SCORE_STATUS){
-    lastCol = `<td data-label="Оценка Никиты">${scoreSummary(c)}</td>`;
+    lastCol = `<td data-label="Оценка заказчика">${scoreSummary(c)}</td>`;
   } else {
-    const sc = getScore(c.id);
-    lastCol = (sc.profile_score || sc.company_score)
-      ? `<td data-label="Оценка Никиты">${scoreSummary(c)}</td>`
-      : `<td data-label="Оценка Никиты"><span class="stage-raw">—</span></td>`;
+    const overall = overallCustomerScore(c.id);
+    lastCol = overall != null
+      ? `<td data-label="Оценка заказчика">${scoreSummary(c)}</td>`
+      : `<td data-label="Оценка заказчика"><span class="stage-raw">—</span></td>`;
   }
   return `
     <td data-label="Кандидат"><div class="fio">${c.fio}</div><div class="vac-tag">${c.vac}</div></td>
@@ -445,7 +477,7 @@ function renderStatusGroup(){
 
   const group = document.createElement("div");
   group.className = "group";
-  const headerCol = isRejected ? "Причина" : "Оценка Никиты";
+  const headerCol = isRejected ? "Причина" : "Оценка заказчика";
 
   group.innerHTML = `
     <div class="group-head"><h2>${status}</h2><span class="group-count">${rows.length}</span></div>
@@ -584,7 +616,7 @@ async function loadExtra(candId){
   }
 }
 
-function scoreSelect(field, current){
+function scoreSelect(person, field, current){
   const options = [
     `<option value=""${current==null ? " selected" : ""}>Без оценки</option>`,
     ...Array.from({length:10}, (_,i)=>{
@@ -592,37 +624,58 @@ function scoreSelect(field, current){
       return `<option value="${value}"${current===value ? " selected" : ""}>${value}</option>`;
     })
   ].join("");
-  return `<select class="score-select" data-score-field="${field}">${options}</select>`;
+  return `<select class="score-select" data-score-person="${person}" data-score-field="${field}">${options}</select>`;
 }
 
-function renderScoreBlock(c, score){
-  const editable = c.status === SCORE_STATUS;
-  const hasScore = !!(score.profile_score || score.company_score);
-  if(!editable && !hasScore) return "";
+function evaluatorScorePanel(cid, person, editable){
+  const score = getScore(cid, person);
+  const avg = evaluatorAverage(score);
 
   if(!editable){
+    if(avg == null) return "";
     return `
-      <div class="score-panel">
-        <div class="score-title">Оценка Никиты на этапе «Пристрелка»</div>
-        ${scoreSummary(c)}
+      <div style="margin-top:10px;">
+        <div class="score-label">${person}</div>
+        <div class="score-summary">
+          <span class="score-badge">Профиль ${score.profile_score ?? "—"}/10</span>
+          <span class="score-badge">Компания ${score.company_score ?? "—"}/10</span>
+          <span class="score-badge empty">Средняя ${fmtScore(avg)}/10</span>
+        </div>
       </div>
     `;
   }
 
   return `
-    <div class="score-panel">
-      <div class="score-title">Оценка Никиты · 10-балльная шкала</div>
+    <div style="margin-top:12px;">
+      <div class="score-label" style="font-size:13px;">${person}</div>
       <div class="score-grid">
         <div>
-          <div class="score-label">Попадание в профиль</div>
-          ${scoreSelect("profile_score", score.profile_score)}
+          <div class="score-label">Профиль</div>
+          ${scoreSelect(person, "profile_score", score.profile_score)}
         </div>
         <div>
-          <div class="score-label">Попадание в компанию</div>
-          ${scoreSelect("company_score", score.company_score)}
+          <div class="score-label">Компания</div>
+          ${scoreSelect(person, "company_score", score.company_score)}
         </div>
       </div>
-      <div class="score-meta">Оценки сохраняются сразу после выбора. Чтобы отменить оценку, выберите «Без оценки». Комментарий можно оставить ниже.</div>
+      <div class="score-meta">Средняя оценка ${person}: ${avg == null ? "—" : fmtScore(avg) + "/10"}</div>
+    </div>
+  `;
+}
+
+function renderScoreBlock(c){
+  const editable = c.status === SCORE_STATUS;
+  const hasScore = EVALUATORS.some(person => evaluatorAverage(getScore(c.id, person)) != null);
+  if(!editable && !hasScore) return "";
+
+  return `
+    <div class="score-panel">
+      <div class="score-title">Оценки заказчика · 10-балльная шкала</div>
+      <div class="score-summary" style="margin-bottom:8px;">
+        ${scoreSummary(c)}
+      </div>
+      ${EVALUATORS.map(person => evaluatorScorePanel(c.id, person, editable)).join("")}
+      ${editable ? `<div class="score-meta" style="margin-top:12px;">Общая оценка заказчика — средняя между оценками Димы и Никиты. Если оценил только один, используется его оценка. Чтобы снять оценку, выберите «Без оценки».</div>` : ""}
     </div>
   `;
 }
@@ -691,7 +744,7 @@ function renderResumeSection(c, extra, mode){
   `;
 }
 
-function wireModalHandlers(c, extra, score){
+function wireModalHandlers(c, extra){
   // комментарии заказчиков
   const toggleBtn = document.getElementById("toggleCommentFormBtn");
   if(toggleBtn){
@@ -724,12 +777,17 @@ function wireModalHandlers(c, extra, score){
     };
   }
 
-  // оценки Никиты на этапе «Пристрелка»
+  // оценки Димы и Никиты на этапе «Пристрелка»
   document.querySelectorAll('.score-select[data-score-field]').forEach(select=>{
     select.onchange = async ()=>{
       try{
         const value = select.value === "" ? null : Number(select.value);
-        await setCandidateScore(c.id, select.dataset.scoreField, value);
+        await setCandidateScore(
+          c.id,
+          select.dataset.scorePerson,
+          select.dataset.scoreField,
+          value
+        );
         showToast(value == null ? "Оценка отменена" : "Оценка сохранена");
         const activeTab = document.querySelector('.rmtab.active');
         const mode = activeTab ? activeTab.dataset.rmode : undefined;
@@ -815,7 +873,6 @@ async function openModal(c, resumeMode){
   const body = document.getElementById("modalBody");
   const extra = await loadExtra(c.id);
   const customerComments = await loadCustomerComments(c.id);
-  const score = getScore(c.id);
 
   const infoFields = [
     field("Источник", c.source),
@@ -842,7 +899,7 @@ async function openModal(c, resumeMode){
     <div class="modal-sub">${c.vac} · ${c.status} (${c.raw_stage}) · переведён ${c.date} · <span class="days-badge ${daysClass(c.status, c.days)}">${c.days} дн. в статусе</span></div>
 
     ${renderResumeSection(c, extra, resumeMode)}
-    ${renderScoreBlock(c, score)}
+    ${renderScoreBlock(c)}
     ${renderCustomerCommentsSection(c, customerComments)}
 
     <div class="modal-grid" style="margin-top:14px;">
@@ -850,7 +907,7 @@ async function openModal(c, resumeMode){
     </div>
   `;
   document.getElementById("modalCloseBtn").onclick = closeModal;
-  wireModalHandlers(c, extra, score);
+  wireModalHandlers(c, extra);
   bg.classList.add("show");
 }
 function closeModal(){
